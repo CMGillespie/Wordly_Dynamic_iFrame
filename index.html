@@ -30,13 +30,9 @@
         
         #frame-holder { 
             display: none; width: 100%; height: 550px; background: #000; border-radius: 8px; 
-            border: 2px solid #30363d; overflow: hidden; margin-top: 10px;
-            transition: all 0.6s ease;
+            border: 2px solid #30363d; overflow: hidden; margin-top: 10px; transition: all 0.6s ease;
         }
-        .apac-active #frame-holder {
-            border-color: #2ecc71;
-            box-shadow: 0 0 25px var(--apac-glow);
-        }
+        .apac-active #frame-holder { border-color: #2ecc71; box-shadow: 0 0 25px var(--apac-glow); }
 
         iframe { width: 100%; height: 100%; border: none; }
         
@@ -64,7 +60,7 @@
             <div class="field">
                 <label>2. Target Language</label>
                 <select id="lang-picker">
-                    <option value="" disabled selected>-- Choose Language --</option>
+                    <option value="" disabled selected>-- Loading... --</option>
                 </select>
             </div>
         </div>
@@ -85,38 +81,30 @@
 
     <div id="code-reveal">
         <h2>Developer Implementation Guide</h2>
-        
         <div class="guide-section">
             <h3>Overview</h3>
-            <p>This demo illustrates how to bypass the internal Wordly UI controls by passing state-driven parameters via the iframe URL. This ensures a clean, branded experience where the host application maintains the single source of truth for language selection.</p>
+            <p>To enforce a "Single Point of Control," the parent application suppresses internal Wordly selectors by explicitly defining the target language and hiding all others.</p>
         </div>
-
         <div class="guide-section">
-            <h3>Dynamic Code Generation</h3>
-            <pre id="code-output">// Live code will generate here...</pre>
-        </div>
-
-        <div class="guide-section">
-            <h3>Parameter Breakdown</h3>
+            <h3>Surgical URL Parameters</h3>
             <ul>
-                <li><strong>lang:</strong> Forces the translation engine to the target locale.</li>
-                <li><strong>finalOnly:</strong> (True for APAC) Suppresses partial text for better readability in character-based languages.</li>
-                <li><strong>speakerLanguage=false:</strong> Suppresses the speaker's original language notification.</li>
+                <li><strong>lang:</strong> Sets the starting language.</li>
+                <li><strong>show:</strong> Restricts the internal menu to ONLY the selected code, effectively disabling the selector bar.</li>
+                <li><strong>speakerLanguage=false:</strong> Hides the "Speaker is speaking..." toast.</li>
             </ul>
+        </div>
+        <div class="guide-section">
+            <h3>Generated Script</h3>
+            <pre id="code-output">// Live code will generate here...</pre>
         </div>
     </div>
 </div>
 
 <script>
-// Precision mapping for Dragon #1
 const APAC_LIST = ['zh-CN', 'ja', 'ko'];
 const BACKSTOP_LANGS = [
-    {code: 'en', name: 'English'},
-    {code: 'es', name: 'Spanish'},
-    {code: 'fr', name: 'French'},
-    {code: 'zh-CN', name: 'Chinese (Simplified)'},
-    {code: 'ja', name: 'Japanese'},
-    {code: 'ko', name: 'Korean'}
+    {code: 'en', name: 'English'}, {code: 'es', name: 'Spanish'}, {code: 'fr', name: 'French'},
+    {code: 'zh-CN', name: 'Chinese (Simplified)'}, {code: 'ja', name: 'Japanese'}, {code: 'ko', name: 'Korean'}
 ];
 
 const sidInput = document.getElementById('session-id');
@@ -127,7 +115,6 @@ const placeholder = document.getElementById('placeholder');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
-// Immediate UI Readiness
 function initLangs(list) {
     const current = langPicker.value;
     langPicker.innerHTML = '<option value="" disabled selected>-- Choose Language --</option>';
@@ -152,12 +139,9 @@ sidInput.addEventListener('input', (e) => {
 function update() {
     const sid = sidInput.value;
     const lang = langPicker.value;
-    
     if (sid.length < 9 || !lang) return;
 
     const isApac = APAC_LIST.includes(lang);
-    
-    // Dragon #3: Visual Demo Confirmation
     if (isApac) {
         document.body.classList.add('apac-active');
         document.body.style.backgroundColor = "var(--apac-bg)";
@@ -169,27 +153,25 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
-    // Dragon #2: The URL Bomb (Order Matters!)
-    // We put lang first and add common UI suppression flags
-    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&finalOnly=${isApac}&speakerLanguage=false&controls=0&ui=minimal`;
+    // SURGICAL URL: Priority positioning + show=[lang] to kill the menu
+    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}&controls=0`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    codeOutput.innerText = `// Precision URL Injection
+    codeOutput.innerText = `// Precision Iframe Handover
 const sessionId = "${sid}";
-const selectedLang = "${lang}";
-const isApacLocale = ${isApac};
+const langCode = "${lang}";
+const apacTrigger = ${isApac};
 
-// By passing the 'lang' parameter first, we force the engine 
-// and suppress the internal selector UI.
+// Using 'show' parameter to restrict the internal Wordly menu to a single language.
 const src = "https://attend.wordly.ai/frame/" + sessionId + 
-            "?lang=" + selectedLang + 
-            "&finalOnly=" + isApacLocale + 
-            "&speakerLanguage=false" +
-            "&controls=0";
+            "?lang=" + langCode + 
+            "&show=" + langCode + 
+            "&speakerLanguage=false" + 
+            "&finalOnly=" + apacTrigger;
 
-document.getElementById('wordly-iframe').src = src;`;
+document.getElementById('wordly-frame').src = src;`;
 }
 
 function toggleCode() {
@@ -200,18 +182,14 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// Dragon #1: The CORS Bypass
+// PROPER SYNC: Using Proxy to bypass CORS block
 const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://assets.wordly.ai/language-config/languages.json');
-
 fetch(proxyUrl)
     .then(r => r.json())
     .then(data => {
         const wordlyData = JSON.parse(data.contents);
-        if (wordlyData && wordlyData.length > 0) {
-            initLangs(wordlyData);
-        }
-    }).catch(e => console.warn("Fetch failed, backstop list is active."));
-
+        if (wordlyData && wordlyData.length > 0) initLangs(wordlyData);
+    }).catch(e => console.warn("Proxy fetch failed, staying with backstop."));
 </script>
 </body>
 </html>
