@@ -17,11 +17,10 @@
         .container { max-width: 1000px; margin: 0 auto; }
         .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; }
         
-        /* Signal Path Box */
         .url-monitor { 
             background: #000; 
             border: 1px solid var(--highlight); 
-            padding: 10px; 
+            padding: 12px; 
             border-radius: 6px; 
             margin: 15px 0; 
             font-family: monospace; 
@@ -32,15 +31,14 @@
 
         .input-group { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
         .field { display: flex; flex-direction: column; gap: 5px; }
-        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 6px; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 6px; font-size: 16px; min-width: 200px; }
         
-        .iframe-wrap { width: 100%; height: 500px; background: #000; border-radius: 8px; border: 2px solid #30363d; overflow: hidden; }
+        .iframe-wrap { width: 100%; height: 550px; background: #000; border-radius: 8px; border: 2px solid #30363d; overflow: hidden; margin-top: 10px; }
         iframe { width: 100%; height: 100%; border: none; }
         
-        #code-reveal { display: none; background: #0d1117; padding: 20px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
-        pre { white-space: pre-wrap; color: #79c0ff; font-size: 13px; }
-        button { cursor: pointer; padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; }
-        .btn-blue { background: var(--accent); color: white; margin-top: 10px; }
+        #code-reveal { display: none; background: #0d1117; padding: 25px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
+        pre { white-space: pre-wrap; color: #79c0ff; font-size: 13px; line-height: 1.5; }
+        button { cursor: pointer; padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -55,33 +53,33 @@
                 <input type="text" id="session-id" placeholder="ABCD-1234" maxlength="9">
             </div>
             <div class="field">
-                <label>Language</label>
+                <label>Language Selection</label>
                 <select id="lang-picker">
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
                     <option value="fr">French</option>
                     <option value="de">German</option>
-                    <option value="it">Italian</option>
-                    <option value="zh">Chinese (APAC Trigger)</option>
-                    <option value="ja">Japanese (APAC Trigger)</option>
-                    <option value="ko">Korean (APAC Trigger)</option>
+                    <option value="zh">Chinese (APAC Rule)</option>
+                    <option value="ja">Japanese (APAC Rule)</option>
+                    <option value="ko">Korean (APAC Rule)</option>
                 </select>
             </div>
         </div>
 
         <div class="url-monitor">
-            <strong>LIVE SIGNAL PATH:</strong> <span id="url-display">Enter Session ID to generate...</span>
+            <strong>LIVE SIGNAL PATH:</strong> <br>
+            <span id="url-display">Awaiting valid Session ID...</span>
         </div>
 
         <div class="iframe-wrap">
-            <iframe id="display-frame" allow="microphone"></iframe>
+            <iframe id="display-frame" allow="microphone; clipboard-write"></iframe>
         </div>
 
-        <button class="btn-blue" onclick="toggleCode()">Click Here to See Implementation Code</button>
+        <button onclick="toggleCode()">Click Here to See Implementation Code</button>
     </div>
 
     <div id="code-reveal">
-        <h3>Implementation Logic</h3>
+        <h3>Implementation Logic (Javascript)</h3>
         <pre id="code-output"></pre>
     </div>
 </div>
@@ -94,7 +92,7 @@ const frame = document.getElementById('display-frame');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
-// 1. Session ID Masking
+// 1. Session ID Formatting (ABCD-1234)
 sidInput.addEventListener('input', (e) => {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 8);
@@ -102,67 +100,64 @@ sidInput.addEventListener('input', (e) => {
     update();
 });
 
-// 2. Main Logic
+// 2. Main Logic Engine
 function update() {
     const sid = sidInput.value;
-    const lang = langPicker.value;
+    const lang = langPicker.value; // Capture this explicitly
     
     if (sid.length < 9) {
-        urlDisplay.innerText = "Awaiting valid Session ID (ABCD-1234)...";
+        urlDisplay.innerText = "Awaiting valid Session ID...";
         return;
     }
 
     const isApac = APAC_LIST.includes(lang);
     
-    // UI Visual Shift
+    // Background Shift for Visual Demo
     document.body.style.backgroundColor = isApac ? "#0d2a1d" : "#0b0e14";
 
-    // IMPORTANT: Correct URL structure to avoid "Refused to Connect"
-    const finalUrl = `https://wordly.ai/stream/${sid}?language=${lang}&finalOnly=${isApac}`;
+    // CORRECT WORDLY FRAME STRUCTURE
+    const finalUrl = `https://attend.wordly.ai/frame/${sid}?language=${lang}&finalOnly=${isApac}`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    // Build the "Code for Demo" block
+    // Logic Explanation for Reveal Code section
     codeOutput.innerText = `
-// THE SWITCHER FUNCTION
-function updateIframe(selectedLang) {
-    const sessionID = "${sid}";
-    const apacList = ['zh', 'ja', 'ko'];
-    
-    // Determine if we need 'Complete Sentences' (finalOnly)
-    const needsFinalOnly = apacList.includes(selectedLang);
-    
-    // Construct the dynamic URL
-    const newSrc = "https://wordly.ai/stream/" + sessionID + 
-                   "?language=" + selectedLang + 
-                   "&finalOnly=" + needsFinalOnly;
-                   
-    // Inject into the iframe
-    document.getElementById('wordly-frame').src = newSrc;
-}`;
+// 1. Trigger List
+const apacLangs = ['zh', 'ja', 'ko'];
+
+// 2. Logic
+const selectedLang = "${lang}";
+const isFinalOnly = apacLangs.includes(selectedLang);
+
+// 3. Resulting Iframe Source
+const iframeSource = "https://attend.wordly.ai/frame/${sid}?language=" + selectedLang + "&finalOnly=" + isFinalOnly;
+
+document.getElementById('wordly-frame').src = iframeSource;`;
 }
 
 function toggleCode() {
     const el = document.getElementById('code-reveal');
     el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-    el.scrollIntoView({ behavior: 'smooth' });
+    if(el.style.display === 'block') el.scrollIntoView({ behavior: 'smooth' });
 }
 
 langPicker.addEventListener('change', update);
 
-// Try to fetch expanded list, but the fail-safe is already in the HTML
+// 3. Attempt to fetch expanded list, but the fallback is already in the HTML
 fetch('https://assets.wordly.ai/language-config/languages.json')
     .then(r => r.json())
     .then(data => {
+        const savedVal = langPicker.value;
         langPicker.innerHTML = '';
         data.forEach(l => {
             let o = document.createElement('option');
             o.value = l.code;
-            o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Trigger)' : '');
+            o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
             langPicker.appendChild(o);
         });
-    }).catch(e => console.log("Using backup language list."));
+        langPicker.value = savedVal;
+    }).catch(e => console.warn("Fetch blocked. Using default language list."));
 
 </script>
 </body>
