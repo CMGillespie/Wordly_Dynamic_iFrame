@@ -31,14 +31,15 @@
 
         .input-group { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
         .field { display: flex; flex-direction: column; gap: 5px; }
-        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 6px; font-size: 16px; min-width: 200px; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 12px; border-radius: 6px; font-size: 16px; min-width: 220px; }
         
-        .iframe-wrap { width: 100%; height: 550px; background: #000; border-radius: 8px; border: 2px solid #30363d; overflow: hidden; margin-top: 10px; }
+        #frame-holder { display: none; width: 100%; height: 550px; background: #000; border-radius: 8px; border: 2px solid #30363d; overflow: hidden; margin-top: 10px; }
         iframe { width: 100%; height: 100%; border: none; }
         
         #code-reveal { display: none; background: #0d1117; padding: 25px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
         pre { white-space: pre-wrap; color: #79c0ff; font-size: 13px; line-height: 1.5; }
         button { cursor: pointer; padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; }
+        .placeholder { height: 550px; display: flex; align-items: center; justify-content: center; border: 2px dashed #30363d; border-radius: 8px; color: #666; }
     </style>
 </head>
 <body>
@@ -49,12 +50,13 @@
         
         <div class="input-group">
             <div class="field">
-                <label>Session ID</label>
+                <label>1. Session ID</label>
                 <input type="text" id="session-id" placeholder="ABCD-1234" maxlength="9">
             </div>
             <div class="field">
-                <label>Language Selection</label>
+                <label>2. Select Language</label>
                 <select id="lang-picker">
+                    <option value="" disabled selected>-- Choose Language --</option>
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
                     <option value="fr">French</option>
@@ -68,10 +70,11 @@
 
         <div class="url-monitor">
             <strong>LIVE SIGNAL PATH:</strong> <br>
-            <span id="url-display">Awaiting valid Session ID...</span>
+            <span id="url-display">Awaiting valid inputs...</span>
         </div>
 
-        <div class="iframe-wrap">
+        <div id="placeholder" class="placeholder">Iframe will load after configuration</div>
+        <div id="frame-holder">
             <iframe id="display-frame" allow="microphone; clipboard-write"></iframe>
         </div>
 
@@ -89,10 +92,11 @@ const APAC_LIST = ['zh', 'ja', 'ko'];
 const sidInput = document.getElementById('session-id');
 const langPicker = document.getElementById('lang-picker');
 const frame = document.getElementById('display-frame');
+const frameHolder = document.getElementById('frame-holder');
+const placeholder = document.getElementById('placeholder');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
-// 1. Session ID Formatting (ABCD-1234)
 sidInput.addEventListener('input', (e) => {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 8);
@@ -100,38 +104,43 @@ sidInput.addEventListener('input', (e) => {
     update();
 });
 
-// 2. Main Logic Engine
 function update() {
     const sid = sidInput.value;
-    const lang = langPicker.value; // Capture this explicitly
+    const lang = langPicker.value;
     
-    if (sid.length < 9) {
-        urlDisplay.innerText = "Awaiting valid Session ID...";
+    if (sid.length < 9 || !lang) {
+        urlDisplay.innerText = "Awaiting valid inputs...";
+        frameHolder.style.display = "none";
+        placeholder.style.display = "flex";
         return;
     }
 
     const isApac = APAC_LIST.includes(lang);
-    
-    // Background Shift for Visual Demo
     document.body.style.backgroundColor = isApac ? "#0d2a1d" : "#0b0e14";
+    placeholder.style.display = "none";
+    frameHolder.style.display = "block";
 
-    // CORRECT WORDLY FRAME STRUCTURE
-    const finalUrl = `https://attend.wordly.ai/frame/${sid}?language=${lang}&finalOnly=${isApac}`;
+    // UPDATED: lang, finalOnly, AND speakerLanguage flags
+    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&finalOnly=${isApac}&speakerLanguage=false`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    // Logic Explanation for Reveal Code section
     codeOutput.innerText = `
-// 1. Trigger List
+// REFRESH LOGIC
 const apacLangs = ['zh', 'ja', 'ko'];
-
-// 2. Logic
 const selectedLang = "${lang}";
 const isFinalOnly = apacLangs.includes(selectedLang);
 
-// 3. Resulting Iframe Source
-const iframeSource = "https://attend.wordly.ai/frame/${sid}?language=" + selectedLang + "&finalOnly=" + isFinalOnly;
+// Generate formatted frame URL
+// Parameters:
+// lang=${lang} (Sets language & hides internal selector)
+// finalOnly=\${isFinalOnly} (Triggers complete sentences for APAC)
+// speakerLanguage=false (Hides the secondary language selector)
+
+const iframeSource = "https://attend.wordly.ai/frame/${sid}?lang=" + selectedLang + 
+                     "&finalOnly=" + isFinalOnly + 
+                     "&speakerLanguage=false";
 
 document.getElementById('wordly-frame').src = iframeSource;`;
 }
@@ -144,20 +153,17 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// 3. Attempt to fetch expanded list, but the fallback is already in the HTML
 fetch('https://assets.wordly.ai/language-config/languages.json')
     .then(r => r.json())
     .then(data => {
-        const savedVal = langPicker.value;
-        langPicker.innerHTML = '';
+        langPicker.innerHTML = '<option value="" disabled selected>-- Choose Language --</option>';
         data.forEach(l => {
             let o = document.createElement('option');
             o.value = l.code;
             o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
             langPicker.appendChild(o);
         });
-        langPicker.value = savedVal;
-    }).catch(e => console.warn("Fetch blocked. Using default language list."));
+    }).catch(e => console.warn("Using internal backup language list."));
 
 </script>
 </body>
