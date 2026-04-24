@@ -17,7 +17,7 @@
         }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; transition: background 0.6s ease; }
         .container { max-width: 1000px; margin: 0 auto; }
-        .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; position: relative; z-index: 2; }
+        .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; }
         
         .url-monitor { 
             background: #000; border: 1px solid var(--highlight); padding: 12px; border-radius: 6px; 
@@ -33,7 +33,6 @@
             border: 2px solid #30363d; overflow: hidden; margin-top: 10px;
             transition: all 0.6s ease;
         }
-        /* The Subtle Glow for APAC */
         .apac-active #frame-holder {
             border-color: #2ecc71;
             box-shadow: 0 0 25px var(--apac-glow);
@@ -43,7 +42,6 @@
         
         #code-reveal { display: none; background: var(--code-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; color: var(--text); }
         #code-reveal h2 { color: var(--accent); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .md-text { font-size: 15px; line-height: 1.6; color: #8b949e; margin-bottom: 15px; }
         pre { background: #161b22; padding: 15px; border-radius: 6px; color: #79c0ff; font-size: 13px; overflow-x: auto; border: 1px solid #30363d; }
         
         button { cursor: pointer; padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; }
@@ -84,33 +82,25 @@
     </div>
 
     <div id="code-reveal">
-        <h2>Implementation Guide: Dynamic Configuration</h2>
-        
-        <div class="md-text">
-            For <strong>APAC Languages</strong>, we trigger a visual shift and specific parameters to ensure "Complete Sentence" delivery:
+        <h2>Implementation Guide: Precision Handover</h2>
+        <div class="md-text" style="margin-bottom: 15px; color: #8b949e;">
+            Using the exact ISO codes ensures the Wordly engine initializes the correct language and suppresses internal selection bars.
         </div>
-
-        <h3>1. The Script Trigger</h3>
-        <pre id="code-output">// Live code snippet updates here...</pre>
-
-        <h3>2. Key Features Explained</h3>
-        <div class="md-text">
-            <ul>
-                <li><strong>lang:</strong> Directs the translation and suppresses Wordly's internal picker.</li>
-                <li><strong>finalOnly:</strong> (APAC Specific) Waits for a full sentence before displaying text.</li>
-                <li><strong>speakerLanguage:</strong> Set to false to remove secondary UI controls.</li>
-            </ul>
-        </div>
+        <h3>Dynamic Script Generation</h3>
+        <pre id="code-output">// Select inputs to generate...</pre>
     </div>
 </div>
 
 <script>
-// 1. DATA DEFINITIONS
-const APAC_LIST = ['zh', 'ja', 'ko'];
-const DEFAULT_LANGS = [
-    {code: 'en', name: 'English'}, {code: 'es', name: 'Spanish'},
-    {code: 'fr', name: 'French'}, {code: 'de', name: 'German'},
-    {code: 'zh', name: 'Chinese'}, {code: 'ja', name: 'Japanese'},
+// Precision mapping based on Wordly manifest
+const APAC_LIST = ['zh-CN', 'ja', 'ko'];
+const BACKSTOP_LANGS = [
+    {code: 'en', name: 'English'},
+    {code: 'es', name: 'Spanish'},
+    {code: 'fr', name: 'French'},
+    {code: 'de', name: 'German'},
+    {code: 'zh-CN', name: 'Chinese (Simplified)'},
+    {code: 'ja', name: 'Japanese'},
     {code: 'ko', name: 'Korean'}
 ];
 
@@ -122,15 +112,21 @@ const placeholder = document.getElementById('placeholder');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
-// 2. IMMEDIATE POPULATION (Run right now)
-DEFAULT_LANGS.forEach(l => {
-    let o = document.createElement('option');
-    o.value = l.code;
-    o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
-    langPicker.appendChild(o);
-});
+// Immediate population
+function initLangs(list) {
+    const current = langPicker.value;
+    langPicker.innerHTML = '<option value="" disabled selected>-- Choose Language --</option>';
+    list.forEach(l => {
+        let o = document.createElement('option');
+        o.value = l.code;
+        o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Trigger)' : '');
+        langPicker.appendChild(o);
+    });
+    if (current) langPicker.value = current;
+}
 
-// 3. LOGIC ENGINE
+initLangs(BACKSTOP_LANGS);
+
 sidInput.addEventListener('input', (e) => {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 8);
@@ -146,7 +142,7 @@ function update() {
 
     const isApac = APAC_LIST.includes(lang);
     
-    // VISUAL FEEDBACK
+    // UI Visual Logic
     if (isApac) {
         document.body.classList.add('apac-active');
         document.body.style.backgroundColor = "var(--apac-bg)";
@@ -158,52 +154,45 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
+    // URL Construction: lang code first, speakerLanguage=false included
     const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&finalOnly=${isApac}&speakerLanguage=false`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    codeOutput.innerText = `// Logic for ${lang.toUpperCase()}
+    codeOutput.innerText = `// Precision Integration Logic
+const selectedLang = "${lang}";
 const isApac = ${isApac};
 
+// Generate Iframe URL
 const source = "https://attend.wordly.ai/frame/${sid}" + 
-               "?lang=${lang}" + 
+               "?lang=" + selectedLang + 
                "&finalOnly=" + isApac + 
                "&speakerLanguage=false";
 
-// Update Iframe Source
-document.getElementById('wordly-frame').src = source;
-
-// Visual cue for demo
-if (isApac) document.body.classList.add('apac-active');`;
+document.getElementById('wordly-frame').src = source;`;
 }
 
 function toggleCode() {
     const el = document.getElementById('code-reveal');
-    const isHidden = el.style.display === 'none' || el.style.display === '';
-    el.style.display = isHidden ? 'block' : 'none';
-    if(isHidden) el.scrollIntoView({ behavior: 'smooth' });
+    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    if(el.style.display === 'block') el.scrollIntoView({ behavior: 'smooth' });
 }
 
 langPicker.addEventListener('change', update);
 
-// 4. OPTIONAL SUPPLEMENT (Fetch more if possible)
-fetch('https://assets.wordly.ai/language-config/languages.json')
+// Fetch full list via proxy to avoid CORS block
+const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://assets.wordly.ai/language-config/languages.json');
+
+fetch(proxyUrl)
     .then(r => r.json())
     .then(data => {
-        const savedSelection = langPicker.value;
-        // Only clear and rebuild if we actually got data back
-        if(data && data.length > 0) {
-            langPicker.innerHTML = '<option value="" disabled>-- Choose Language --</option>';
-            data.forEach(l => {
-                let o = document.createElement('option');
-                o.value = l.code;
-                o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
-                langPicker.appendChild(o);
-            });
-            if(savedSelection) langPicker.value = savedSelection;
+        const wordlyData = JSON.parse(data.contents);
+        if (wordlyData && wordlyData.length > 0) {
+            initLangs(wordlyData);
         }
-    }).catch(e => console.warn("Using internal backup list."));
+    }).catch(e => console.warn("Fetch failed, using backstop."));
+
 </script>
 </body>
 </html>
