@@ -3,150 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordly Dynamic Configurator v1.3.0</title>
+    <title>Wordly Dynamic Iframe Demo</title>
     <style>
         :root {
             --bg: #0b0e14;
             --card: #161b22;
             --accent: #2f81f7;
             --text: #c9d1d9;
-            --apac-bg: #0d2a1d; /* Subtle dark green for APAC mode */
+            --apac-bg: #0d2a1d; 
+            --highlight: #f0ad4e;
         }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 40px; margin: 0; transition: background 0.4s; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .setup-card { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        h1 { margin-top: 0; color: #fff; }
-        .input-group { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
-        .field { display: flex; flex-direction: column; gap: 8px; }
-        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 12px; border-radius: 6px; font-size: 16px; }
-        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #30363d; margin-left: 10px; }
-        .iframe-wrap { width: 100%; height: 600px; background: #000; border-radius: 8px; border: 4px solid #30363d; overflow: hidden; margin-top: 20px; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; transition: background 0.4s; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; }
+        
+        /* Signal Path Box */
+        .url-monitor { 
+            background: #000; 
+            border: 1px solid var(--highlight); 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin: 15px 0; 
+            font-family: monospace; 
+            font-size: 13px;
+            color: var(--highlight);
+            word-break: break-all;
+        }
+
+        .input-group { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 6px; }
+        
+        .iframe-wrap { width: 100%; height: 500px; background: #000; border-radius: 8px; border: 2px solid #30363d; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; }
-        .code-reveal-area { margin-top: 40px; display: none; background: #0d1117; padding: 25px; border-radius: 8px; border: 1px dashed var(--accent); }
-        pre { white-space: pre-wrap; color: #79c0ff; font-size: 14px; line-height: 1.5; }
-        button#reveal-btn { background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        
+        #code-reveal { display: none; background: #0d1117; padding: 20px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
+        pre { white-space: pre-wrap; color: #79c0ff; font-size: 13px; }
+        button { cursor: pointer; padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; }
+        .btn-blue { background: var(--accent); color: white; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="setup-card">
-        <h1>Wordly Live Configurator</h1>
+        <h1>Wordly Dynamic Iframe Demo</h1>
+        
         <div class="input-group">
             <div class="field">
-                <label>Session ID (ABCD-1234)</label>
-                <input type="text" id="session-id" placeholder="XXXX-0000" maxlength="9">
+                <label>Session ID</label>
+                <input type="text" id="session-id" placeholder="ABCD-1234" maxlength="9">
             </div>
             <div class="field">
-                <label>Select Language</label>
-                <select id="lang-picker"><option>Loading languages...</option></select>
+                <label>Language</label>
+                <select id="lang-picker">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="zh">Chinese (APAC Trigger)</option>
+                    <option value="ja">Japanese (APAC Trigger)</option>
+                    <option value="ko">Korean (APAC Trigger)</option>
+                </select>
             </div>
-            <div id="mode-status" class="badge">NORMAL MODE</div>
         </div>
+
+        <div class="url-monitor">
+            <strong>LIVE SIGNAL PATH:</strong> <span id="url-display">Enter Session ID to generate...</span>
+        </div>
+
         <div class="iframe-wrap">
             <iframe id="display-frame" allow="microphone"></iframe>
         </div>
-        <button id="reveal-btn" onclick="toggleCode()">Click Here to See Implementation Code</button>
+
+        <button class="btn-blue" onclick="toggleCode()">Click Here to See Implementation Code</button>
     </div>
 
-    <div id="code-reveal" class="code-reveal-area">
-        <h2>Implementation Guide</h2>
-        <p>This block shows the specific logic required to handle the <strong>finalOnly</strong> toggle for APAC languages.</p>
+    <div id="code-reveal">
+        <h3>Implementation Logic</h3>
         <pre id="code-output"></pre>
     </div>
 </div>
 
 <script>
-/* VERSION: 1.3.0
-   COMPLIANCE: WCAG 2.1 AA
-*/
-
-const APAC_LIST = ['zh', 'ja', 'ko']; // Hardcoded triggers for 'finalOnly'
-const sessionIdInput = document.getElementById('session-id');
+const APAC_LIST = ['zh', 'ja', 'ko'];
+const sidInput = document.getElementById('session-id');
 const langPicker = document.getElementById('lang-picker');
 const frame = document.getElementById('display-frame');
-const modeStatus = document.getElementById('mode-status');
+const urlDisplay = document.getElementById('url-display');
+const codeOutput = document.getElementById('code-output');
 
-// 1. Fetch live languages from Wordly
-async function loadLanguages() {
-    try {
-        const response = await fetch('https://assets.wordly.ai/language-config/languages.json');
-        const data = await response.json();
-        langPicker.innerHTML = ''; // Clear loading
-        data.forEach(lang => {
-            let opt = document.createElement('option');
-            opt.value = lang.code;
-            opt.innerText = lang.name;
-            langPicker.appendChild(opt);
-        });
-    } catch (e) {
-        langPicker.innerHTML = '<option value="en">English (Backup)</option>';
-    }
-}
-
-// 2. Session ID Input Mask (Forces ABCD-1234)
-sessionIdInput.addEventListener('input', (e) => {
-    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (value.length > 4) {
-        value = value.slice(0, 4) + '-' + value.slice(4, 8);
-    }
-    e.target.value = value;
-    updatePreview();
+// 1. Session ID Masking
+sidInput.addEventListener('input', (e) => {
+    let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 8);
+    e.target.value = val;
+    update();
 });
 
-// 3. The Core Logic Engine
-function updatePreview() {
-    const sid = sessionIdInput.value || "YOUR-ID";
+// 2. Main Logic
+function update() {
+    const sid = sidInput.value;
     const lang = langPicker.value;
-    const isApac = APAC_LIST.includes(lang);
-
-    // Visual feedback
-    if(isApac) {
-        document.body.style.backgroundColor = "var(--apac-bg)";
-        modeStatus.innerText = "APAC MODE: FINAL ONLY ACTIVE";
-        modeStatus.style.background = "#238636";
-    } else {
-        document.body.style.backgroundColor = "var(--bg)";
-        modeStatus.innerText = "NORMAL MODE";
-        modeStatus.style.background = "#30363d";
+    
+    if (sid.length < 9) {
+        urlDisplay.innerText = "Awaiting valid Session ID (ABCD-1234)...";
+        return;
     }
 
-    // Refresh Iframe
+    const isApac = APAC_LIST.includes(lang);
+    
+    // UI Visual Shift
+    document.body.style.backgroundColor = isApac ? "#0d2a1d" : "#0b0e14";
+
+    // IMPORTANT: Correct URL structure to avoid "Refused to Connect"
     const finalUrl = `https://wordly.ai/stream/${sid}?language=${lang}&finalOnly=${isApac}`;
+    
+    urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    generateCodeSummary(sid, lang, isApac, finalUrl);
-}
-
-function generateCodeSummary(sid, lang, isApac, url) {
-    const codeText = `
-// --- STEP 1: DEFINE THE RULES ---
-const APAC_LANGS = ['zh', 'ja', 'ko']; 
-
-// --- STEP 2: DYNAMICALLY BUILD THE URL ---
-// Selected Language: ${lang}
-// finalOnly Flag: ${isApac} (Triggered because it is ${isApac ? '' : 'NOT '}in APAC list)
-
-const targetUrl = "${url}";
-
-// --- STEP 3: UPDATE THE IFRAME ---
-document.getElementById('wordly-frame').src = targetUrl;
-
-/* EXPLAINER (ELI16):
-   - We detect if the user chose a language that requires 'Full Sentences' (APAC).
-   - We then "stitch" the Wordly address with the specific setting (?finalOnly=${isApac}).
-   - This allows the same iframe to behave differently based on the language choice.
-*/`;
-    document.getElementById('code-output').innerText = codeText;
+    // Build the "Code for Demo" block
+    codeOutput.innerText = `
+// THE SWITCHER FUNCTION
+function updateIframe(selectedLang) {
+    const sessionID = "${sid}";
+    const apacList = ['zh', 'ja', 'ko'];
+    
+    // Determine if we need 'Complete Sentences' (finalOnly)
+    const needsFinalOnly = apacList.includes(selectedLang);
+    
+    // Construct the dynamic URL
+    const newSrc = "https://wordly.ai/stream/" + sessionID + 
+                   "?language=" + selectedLang + 
+                   "&finalOnly=" + needsFinalOnly;
+                   
+    // Inject into the iframe
+    document.getElementById('wordly-frame').src = newSrc;
+}`;
 }
 
 function toggleCode() {
-    const area = document.getElementById('code-reveal');
-    area.style.display = area.style.display === 'block' ? 'none' : 'block';
+    const el = document.getElementById('code-reveal');
+    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    el.scrollIntoView({ behavior: 'smooth' });
 }
 
-langPicker.addEventListener('change', updatePreview);
-loadLanguages();
+langPicker.addEventListener('change', update);
+
+// Try to fetch expanded list, but the fail-safe is already in the HTML
+fetch('https://assets.wordly.ai/language-config/languages.json')
+    .then(r => r.json())
+    .then(data => {
+        langPicker.innerHTML = '';
+        data.forEach(l => {
+            let o = document.createElement('option');
+            o.value = l.code;
+            o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Trigger)' : '');
+            langPicker.appendChild(o);
+        });
+    }).catch(e => console.log("Using backup language list."));
+
 </script>
 </body>
 </html>
