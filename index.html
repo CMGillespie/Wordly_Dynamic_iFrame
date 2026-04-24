@@ -17,7 +17,7 @@
         }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; transition: background 0.6s ease; }
         .container { max-width: 1000px; margin: 0 auto; }
-        .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; }
+        .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
         
         .url-monitor { 
             background: #000; border: 1px solid var(--highlight); padding: 12px; border-radius: 6px; 
@@ -41,7 +41,9 @@
         iframe { width: 100%; height: 100%; border: none; }
         
         #code-reveal { display: none; background: var(--code-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; color: var(--text); }
-        #code-reveal h2 { color: var(--accent); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        #code-reveal h2 { color: var(--accent); margin: 0 0 15px 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        .guide-section { margin-bottom: 25px; border-left: 3px solid #30363d; padding-left: 15px; }
+        .guide-section h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--highlight); margin-bottom: 10px; }
         pre { background: #161b22; padding: 15px; border-radius: 6px; color: #79c0ff; font-size: 13px; overflow-x: auto; border: 1px solid #30363d; }
         
         button { cursor: pointer; padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; }
@@ -57,10 +59,10 @@
         <div class="input-group">
             <div class="field">
                 <label>1. Session ID</label>
-                <input type="text" id="session-id" placeholder="ABCD-1234" maxlength="9">
+                <input type="text" id="session-id" placeholder="XXXX-0000" maxlength="9">
             </div>
             <div class="field">
-                <label>2. Select Language</label>
+                <label>2. Target Language</label>
                 <select id="lang-picker">
                     <option value="" disabled selected>-- Choose Language --</option>
                 </select>
@@ -72,33 +74,46 @@
             <span id="url-display">Awaiting valid configuration...</span>
         </div>
 
-        <div id="placeholder" class="placeholder">Iframe will load after configuration</div>
+        <div id="placeholder" class="placeholder">Iframe will load after selection</div>
         
         <div id="frame-holder">
             <iframe id="display-frame" allow="microphone; clipboard-write"></iframe>
         </div>
 
-        <button onclick="toggleCode()">Click Here to See Implementation Code</button>
+        <button onclick="toggleCode()">Show Implementation Guide</button>
     </div>
 
     <div id="code-reveal">
-        <h2>Implementation Guide: Precision Handover</h2>
-        <div class="md-text" style="margin-bottom: 15px; color: #8b949e;">
-            Using the exact ISO codes ensures the Wordly engine initializes the correct language and suppresses internal selection bars.
+        <h2>Developer Implementation Guide</h2>
+        
+        <div class="guide-section">
+            <h3>Overview</h3>
+            <p>This demo illustrates how to bypass the internal Wordly UI controls by passing state-driven parameters via the iframe URL. This ensures a clean, branded experience where the host application maintains the single source of truth for language selection.</p>
         </div>
-        <h3>Dynamic Script Generation</h3>
-        <pre id="code-output">// Select inputs to generate...</pre>
+
+        <div class="guide-section">
+            <h3>Dynamic Code Generation</h3>
+            <pre id="code-output">// Live code will generate here...</pre>
+        </div>
+
+        <div class="guide-section">
+            <h3>Parameter Breakdown</h3>
+            <ul>
+                <li><strong>lang:</strong> Forces the translation engine to the target locale.</li>
+                <li><strong>finalOnly:</strong> (True for APAC) Suppresses partial text for better readability in character-based languages.</li>
+                <li><strong>speakerLanguage=false:</strong> Suppresses the speaker's original language notification.</li>
+            </ul>
+        </div>
     </div>
 </div>
 
 <script>
-// Precision mapping based on Wordly manifest
+// Precision mapping for Dragon #1
 const APAC_LIST = ['zh-CN', 'ja', 'ko'];
 const BACKSTOP_LANGS = [
     {code: 'en', name: 'English'},
     {code: 'es', name: 'Spanish'},
     {code: 'fr', name: 'French'},
-    {code: 'de', name: 'German'},
     {code: 'zh-CN', name: 'Chinese (Simplified)'},
     {code: 'ja', name: 'Japanese'},
     {code: 'ko', name: 'Korean'}
@@ -112,14 +127,14 @@ const placeholder = document.getElementById('placeholder');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
-// Immediate population
+// Immediate UI Readiness
 function initLangs(list) {
     const current = langPicker.value;
     langPicker.innerHTML = '<option value="" disabled selected>-- Choose Language --</option>';
     list.forEach(l => {
         let o = document.createElement('option');
         o.value = l.code;
-        o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Trigger)' : '');
+        o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
         langPicker.appendChild(o);
     });
     if (current) langPicker.value = current;
@@ -142,7 +157,7 @@ function update() {
 
     const isApac = APAC_LIST.includes(lang);
     
-    // UI Visual Logic
+    // Dragon #3: Visual Demo Confirmation
     if (isApac) {
         document.body.classList.add('apac-active');
         document.body.style.backgroundColor = "var(--apac-bg)";
@@ -154,23 +169,27 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
-    // URL Construction: lang code first, speakerLanguage=false included
-    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&finalOnly=${isApac}&speakerLanguage=false`;
+    // Dragon #2: The URL Bomb (Order Matters!)
+    // We put lang first and add common UI suppression flags
+    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&finalOnly=${isApac}&speakerLanguage=false&controls=0&ui=minimal`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    codeOutput.innerText = `// Precision Integration Logic
+    codeOutput.innerText = `// Precision URL Injection
+const sessionId = "${sid}";
 const selectedLang = "${lang}";
-const isApac = ${isApac};
+const isApacLocale = ${isApac};
 
-// Generate Iframe URL
-const source = "https://attend.wordly.ai/frame/${sid}" + 
-               "?lang=" + selectedLang + 
-               "&finalOnly=" + isApac + 
-               "&speakerLanguage=false";
+// By passing the 'lang' parameter first, we force the engine 
+// and suppress the internal selector UI.
+const src = "https://attend.wordly.ai/frame/" + sessionId + 
+            "?lang=" + selectedLang + 
+            "&finalOnly=" + isApacLocale + 
+            "&speakerLanguage=false" +
+            "&controls=0";
 
-document.getElementById('wordly-frame').src = source;`;
+document.getElementById('wordly-iframe').src = src;`;
 }
 
 function toggleCode() {
@@ -181,7 +200,7 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// Fetch full list via proxy to avoid CORS block
+// Dragon #1: The CORS Bypass
 const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://assets.wordly.ai/language-config/languages.json');
 
 fetch(proxyUrl)
@@ -191,7 +210,7 @@ fetch(proxyUrl)
         if (wordlyData && wordlyData.length > 0) {
             initLangs(wordlyData);
         }
-    }).catch(e => console.warn("Fetch failed, using backstop."));
+    }).catch(e => console.warn("Fetch failed, backstop list is active."));
 
 </script>
 </body>
