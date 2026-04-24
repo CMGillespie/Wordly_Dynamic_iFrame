@@ -60,7 +60,7 @@
             <div class="field">
                 <label>2. Target Language</label>
                 <select id="lang-picker">
-                    <option value="" disabled selected>-- Loading... --</option>
+                    <option value="" disabled selected>-- Initializing List --</option>
                 </select>
             </div>
         </div>
@@ -83,14 +83,14 @@
         <h2>Developer Implementation Guide</h2>
         <div class="guide-section">
             <h3>Overview</h3>
-            <p>To enforce a "Single Point of Control," the parent application suppresses internal Wordly selectors by explicitly defining the target language and hiding all others.</p>
+            <p>This implementation enforces a "Single Point of Control" by using the <code>show</code> parameter to restrict the internal Wordly menu.</p>
         </div>
         <div class="guide-section">
             <h3>Surgical URL Parameters</h3>
             <ul>
-                <li><strong>lang:</strong> Sets the starting language.</li>
-                <li><strong>show:</strong> Restricts the internal menu to ONLY the selected code, effectively disabling the selector bar.</li>
-                <li><strong>speakerLanguage=false:</strong> Hides the "Speaker is speaking..." toast.</li>
+                <li><strong>lang:</strong> Directs the translation engine to the target locale.</li>
+                <li><strong>show:</strong> Limits the internal menu options to only the selected language, effectively hiding the bar.</li>
+                <li><strong>finalOnly:</strong> (APAC Specific) Optimizes display for character-based sentence structures.</li>
             </ul>
         </div>
         <div class="guide-section">
@@ -101,6 +101,7 @@
 </div>
 
 <script>
+// Logic derived from your Gateway script
 const APAC_LIST = ['zh-CN', 'ja', 'ko'];
 const BACKSTOP_LANGS = [
     {code: 'en', name: 'English'}, {code: 'es', name: 'Spanish'}, {code: 'fr', name: 'French'},
@@ -127,6 +128,7 @@ function initLangs(list) {
     if (current) langPicker.value = current;
 }
 
+// 1. Load the Backstop immediately
 initLangs(BACKSTOP_LANGS);
 
 sidInput.addEventListener('input', (e) => {
@@ -153,24 +155,14 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
-    // SURGICAL URL: Priority positioning + show=[lang] to kill the menu
-    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}&controls=0`;
+    // SURGICAL URL: show=[lang] is the key hack to hide the menu
+    const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
     codeOutput.innerText = `// Precision Iframe Handover
-const sessionId = "${sid}";
-const langCode = "${lang}";
-const apacTrigger = ${isApac};
-
-// Using 'show' parameter to restrict the internal Wordly menu to a single language.
-const src = "https://attend.wordly.ai/frame/" + sessionId + 
-            "?lang=" + langCode + 
-            "&show=" + langCode + 
-            "&speakerLanguage=false" + 
-            "&finalOnly=" + apacTrigger;
-
+const src = "https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}";
 document.getElementById('wordly-frame').src = src;`;
 }
 
@@ -182,14 +174,22 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// PROPER SYNC: Using Proxy to bypass CORS block
+// 2. The Gateway-style fetch using the Proxy to defeat Browser CORS
 const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://assets.wordly.ai/language-config/languages.json');
 fetch(proxyUrl)
     .then(r => r.json())
     .then(data => {
-        const wordlyData = JSON.parse(data.contents);
-        if (wordlyData && wordlyData.length > 0) initLangs(wordlyData);
-    }).catch(e => console.warn("Proxy fetch failed, staying with backstop."));
+        // Parsing based on your Gateway JSON logic
+        const parsed = JSON.parse(data.contents);
+        const list = parsed.languages || parsed; // Handle both your script's 'languages' key and flat arrays
+        if (list && list.length > 0) {
+            const formatted = list.map(item => ({
+                code: item.wordlyCode || item.code,
+                name: item.englishName || item.name
+            }));
+            initLangs(formatted);
+        }
+    }).catch(e => console.warn("Proxy fetch failed. Standing by with Backstop list."));
 </script>
 </body>
 </html>
