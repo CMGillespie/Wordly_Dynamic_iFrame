@@ -16,7 +16,7 @@
             --apac-glow: rgba(46, 204, 113, 0.3);
         }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; transition: background 0.6s ease; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         .setup-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
         
         .url-monitor { 
@@ -36,13 +36,18 @@
 
         iframe { width: 100%; height: 100%; border: none; }
         
-        #code-reveal { display: none; background: var(--code-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; color: var(--text); }
-        #code-reveal h2 { color: var(--accent); margin: 0 0 15px 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .guide-section { margin-bottom: 25px; border-left: 3px solid #30363d; padding-left: 15px; }
-        .guide-section h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--highlight); margin-bottom: 10px; }
-        pre { background: #161b22; padding: 15px; border-radius: 6px; color: #79c0ff; font-size: 13px; overflow-x: auto; border: 1px solid #30363d; }
+        /* Robust Documentation Styling */
+        #code-reveal { display: none; background: var(--code-bg); padding: 40px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; color: var(--text); line-height: 1.6; }
+        #code-reveal h2 { color: var(--accent); margin: 0 0 20px 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 28px; }
+        .guide-section { margin-bottom: 35px; }
+        .guide-section h3 { font-size: 18px; color: var(--highlight); margin-bottom: 12px; border-left: 4px solid var(--highlight); padding-left: 15px; }
+        .doc-table { width: 100%; border-collapse: collapse; margin: 15px 0; background: #161b22; }
+        .doc-table th, .doc-table td { padding: 12px; border: 1px solid #30363d; text-align: left; font-size: 14px; }
+        .doc-table th { background: #0d1117; color: var(--accent); }
         
-        button { cursor: pointer; padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; }
+        pre { background: #000; padding: 20px; border-radius: 6px; color: #79c0ff; font-size: 13px; overflow-x: auto; border: 1px solid var(--accent); margin: 15px 0; }
+        
+        button { cursor: pointer; padding: 14px 28px; border-radius: 6px; border: none; font-weight: bold; background: var(--accent); color: white; margin-top: 10px; font-size: 15px; }
         .placeholder { height: 550px; display: flex; align-items: center; justify-content: center; border: 2px dashed #30363d; border-radius: 8px; color: #666; }
     </style>
 </head>
@@ -60,7 +65,7 @@
             <div class="field">
                 <label>2. Target Language</label>
                 <select id="lang-picker">
-                    <option value="" disabled selected>-- Fetching Local JSON --</option>
+                    <option value="" disabled selected>-- Loading Assets --</option>
                 </select>
             </div>
         </div>
@@ -76,32 +81,47 @@
             <iframe id="display-frame" allow="microphone; clipboard-write"></iframe>
         </div>
 
-        <button onclick="toggleCode()">Show Implementation Guide</button>
+        <button onclick="toggleCode()">Show Technical Documentation & Implementation Code</button>
     </div>
 
     <div id="code-reveal">
-        <h2>Developer Implementation Guide</h2>
+        <h2>Technical Implementation Guide</h2>
+        
         <div class="guide-section">
-            <h3>Overview</h3>
-            <p>Parental control is enforced by defining the language in the URL and using the <code>show</code> flag to restrict the internal Wordly menu.</p>
+            <h3>Architectural Overview</h3>
+            <p>This implementation utilizes a <strong>Parental Control Model</strong> for iframe integration. By offloading language selection and UI state management to the host application, developers can ensure a consistent UX while leveraging Wordly's translation engine. This approach is favored by NetSec teams as it minimizes user interaction with third-party iframe elements and enforces strict session parameters.</p>
         </div>
+
         <div class="guide-section">
-            <h3>Surgical URL Parameters</h3>
-            <ul>
-                <li><strong>lang:</strong> Initializes the target language.</li>
-                <li><strong>show:</strong> Locks the internal selector to only the specified language.</li>
-                <li><strong>finalOnly:</strong> (APAC Specific) Handled via logic to optimize character-based display.</li>
-            </ul>
+            <h3>Surgical Parameter Logic</h3>
+            <p>We leverage specific query string parameters to suppress native Angular Material components inside the <code>attend.wordly.ai</code> domain:</p>
+            <table class="doc-table">
+                <thead>
+                    <tr><th>Parameter</th><th>Type</th><th>Security/UX Impact</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>lang</code></td><td>String (ISO)</td><td>Initializes the translation engine into a specific locale immediately.</td></tr>
+                    <tr><td><code>show</code></td><td>String (ISO)</td><td><strong>Critical:</strong> Limits the internal Mat-Select menu to a single option, effectively disabling the selector bar.</td></tr>
+                    <tr><td><code>speakerLanguage</code></td><td>Boolean</td><td>Suppresses the "Speaker is speaking..." toast notification to reduce UI clutter.</td></tr>
+                    <tr><td><code>finalOnly</code></td><td>Boolean</td><td>Optimizes character-based rendering for APAC regions by preventing partial sentence updates.</td></tr>
+                </tbody>
+            </table>
         </div>
+
         <div class="guide-section">
-            <h3>Implementation Logic</h3>
-            <pre id="code-output">// Live code will generate here...</pre>
+            <h3>Complete Implementation Code (JavaScript)</h3>
+            <p>The following function handles the dynamic state change, visual mode switching, and iframe source injection:</p>
+            <pre id="code-output">// Interactive code updates here...</pre>
+        </div>
+
+        <div class="guide-section">
+            <h3>Developer Notes</h3>
+            <p>To implement this in production, ensure the <code>allow="microphone; clipboard-write"</code> attributes are present on the iframe tag to support Wordly's browser-level features. For APAC regions (Chinese, Japanese, Korean), the <code>finalOnly</code> flag is essential for legible sentence structure.</p>
         </div>
     </div>
 </div>
 
 <script>
-// Logic mapping
 const APAC_LIST = ['zh-CN', 'ja', 'ko'];
 const BACKSTOP_LANGS = [
     {code: 'en', name: 'English'}, {code: 'es', name: 'Spanish'}, {code: 'fr', name: 'French'},
@@ -128,7 +148,6 @@ function initLangs(list) {
     if (current) langPicker.value = current;
 }
 
-// Immediate Backstop
 initLangs(BACKSTOP_LANGS);
 
 sidInput.addEventListener('input', (e) => {
@@ -155,15 +174,49 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
-    // URL Logic
     const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    codeOutput.innerText = `// Precision Iframe Control
-const src = "https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}";
-document.getElementById('wordly-frame').src = src;`;
+    // FULL JS FUNCTION REVEAL
+    codeOutput.innerText = `/**
+ * Wordly Dynamic Iframe Orchestrator
+ * @param {string} sessionId - The formatted Wordly session (XXXX-0000)
+ * @param {string} targetLang - The ISO language code
+ */
+function updateWordlyExperience(sessionId, targetLang) {
+    const frame = document.getElementById('wordly-frame');
+    const apacLangs = ['zh-CN', 'ja', 'ko'];
+    
+    // Logic: Enable 'Complete Sentences' (finalOnly) for character-based languages
+    const isApac = apacLangs.includes(targetLang);
+
+    /** * Security & UX Parameters:
+     * lang: Force engine locale
+     * show: Lock internal menu to current selection
+     * speakerLanguage: Suppress speaker info toast
+     * finalOnly: Optimize APAC sentence structure
+     */
+    const sourceUrl = "https://attend.wordly.ai/frame/" + sessionId + 
+                      "?lang=" + targetLang + 
+                      "&show=" + targetLang + 
+                      "&speakerLanguage=false" + 
+                      "&finalOnly=" + isApac;
+
+    // Direct DOM injection to trigger iframe refresh
+    frame.src = sourceUrl;
+    
+    // Optional Visual Hook for UI Mode
+    if (isApac) {
+        document.body.classList.add('mode-apac');
+    } else {
+        document.body.classList.remove('mode-apac');
+    }
+}
+
+// Trigger call for current selection:
+updateWordlyExperience("${sid}", "${lang}");`;
 }
 
 function toggleCode() {
@@ -174,11 +227,10 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// LOCAL JSON FETCH: This avoids CORS because it's on your same domain
+// Local JSON fetch to bypass CORS
 fetch('languages.json')
     .then(r => r.json())
     .then(data => {
-        // Mirrored from your Gateway script's JSON parsing
         const list = data.languages || data; 
         if (list && Array.isArray(list)) {
             const formatted = list.map(item => ({
@@ -187,7 +239,7 @@ fetch('languages.json')
             })).filter(i => i.code && i.name);
             initLangs(formatted);
         }
-    }).catch(e => console.warn("Local JSON fetch failed. Staying with Backstop."));
+    }).catch(e => console.warn("Local JSON fetch failed. Standing by with Backstop."));
 </script>
 </body>
 </html>
