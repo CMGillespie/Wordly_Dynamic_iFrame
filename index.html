@@ -36,7 +36,6 @@
 
         iframe { width: 100%; height: 100%; border: none; }
         
-        /* Robust Documentation Styling */
         #code-reveal { display: none; background: var(--code-bg); padding: 40px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; color: var(--text); line-height: 1.6; }
         #code-reveal h2 { color: var(--accent); margin: 0 0 20px 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 28px; }
         .guide-section { margin-bottom: 35px; }
@@ -65,7 +64,7 @@
             <div class="field">
                 <label>2. Target Language</label>
                 <select id="lang-picker">
-                    <option value="" disabled selected>-- Loading Assets --</option>
+                    <option value="" disabled selected>-- Initializing Assets --</option>
                 </select>
             </div>
         </div>
@@ -89,7 +88,7 @@
         
         <div class="guide-section">
             <h3>Architectural Overview</h3>
-            <p>This implementation utilizes a <strong>Parental Control Model</strong> for iframe integration. By offloading language selection and UI state management to the host application, developers can ensure a consistent UX while leveraging Wordly's translation engine. This approach is favored by NetSec teams as it minimizes user interaction with third-party iframe elements and enforces strict session parameters.</p>
+            <p>This implementation utilizes a <strong>Parental Control Model</strong> for iframe integration. By offloading language selection and UI state management to the host application, developers can ensure a consistent UX while leveraging Wordly's translation engine. This approach minimizes user interaction with third-party iframe elements and enforces strict session parameters.</p>
         </div>
 
         <div class="guide-section">
@@ -101,7 +100,7 @@
                 </thead>
                 <tbody>
                     <tr><td><code>lang</code></td><td>String (ISO)</td><td>Initializes the translation engine into a specific locale immediately.</td></tr>
-                    <tr><td><code>show</code></td><td>String (ISO)</td><td><strong>Critical:</strong> Limits the internal Mat-Select menu to a single option, effectively disabling the selector bar.</td></tr>
+                    <tr><td><code>show</code></td><td>String (ISO)</td><td>Limits the internal Mat-Select menu to a single option, effectively locking the selector bar.</td></tr>
                     <tr><td><code>speakerLanguage</code></td><td>Boolean</td><td>Suppresses the "Speaker is speaking..." toast notification to reduce UI clutter.</td></tr>
                     <tr><td><code>finalOnly</code></td><td>Boolean</td><td>Optimizes character-based rendering for APAC regions by preventing partial sentence updates.</td></tr>
                 </tbody>
@@ -110,22 +109,21 @@
 
         <div class="guide-section">
             <h3>Complete Implementation Code (JavaScript)</h3>
-            <p>The following function handles the dynamic state change, visual mode switching, and iframe source injection:</p>
-            <pre id="code-output">// Interactive code updates here...</pre>
-        </div>
-
-        <div class="guide-section">
-            <h3>Developer Notes</h3>
-            <p>To implement this in production, ensure the <code>allow="microphone; clipboard-write"</code> attributes are present on the iframe tag to support Wordly's browser-level features. For APAC regions (Chinese, Japanese, Korean), the <code>finalOnly</code> flag is essential for legible sentence structure.</p>
+            <pre id="code-output">// Logic updates dynamically based on selection...</pre>
         </div>
     </div>
 </div>
 
 <script>
-const APAC_LIST = ['zh-CN', 'zh-TW', 'ja', 'ko'];
+/**
+ * CONSTANTS AND GLOBAL STATE
+ * APAC_LIST strings are kept lowercase for normalized comparison logic.
+ */
+const APAC_LIST = ['zh-cn', 'zh-tw', 'ja', 'ko'];
 const BACKSTOP_LANGS = [
     {code: 'en', name: 'English'}, {code: 'es', name: 'Spanish'}, {code: 'fr', name: 'French'},
-    {code: 'zh-CN', name: 'Chinese (Simplified)'}, {code: 'ja', name: 'Japanese'}, {code: 'ko', name: 'Korean'}
+    {code: 'zh-CN', name: 'Chinese (Simplified)'}, {code: 'zh-TW', name: 'Chinese (Traditional)'}, 
+    {code: 'ja', name: 'Japanese'}, {code: 'ko', name: 'Korean'}
 ];
 
 const sidInput = document.getElementById('session-id');
@@ -136,20 +134,33 @@ const placeholder = document.getElementById('placeholder');
 const urlDisplay = document.getElementById('url-display');
 const codeOutput = document.getElementById('code-output');
 
+/**
+ * DROPDOWN POPULATION
+ * Normalizes input code to lowercase to check against APAC triggers.
+ */
 function initLangs(list) {
     const current = langPicker.value;
     langPicker.innerHTML = '<option value="" disabled selected>-- Choose Language --</option>';
     list.forEach(l => {
         let o = document.createElement('option');
-        o.value = l.code;
-        o.innerText = l.name + (APAC_LIST.includes(l.code) ? ' (APAC Rule)' : '');
+        o.value = l.code; // Retains exact casing (e.g., zh-CN) for the API
+        
+        // Logical check: Use lowercase comparison to ensure match
+        const isApacMatch = APAC_LIST.includes(l.code.toLowerCase());
+        o.innerText = l.name + (isApacMatch ? ' (APAC Rule)' : '');
+        
         langPicker.appendChild(o);
     });
     if (current) langPicker.value = current;
 }
 
+// Initial fallback load
 initLangs(BACKSTOP_LANGS);
 
+/**
+ * INPUT HANDLING
+ * Formats Session ID into XXXX-0000 pattern.
+ */
 sidInput.addEventListener('input', (e) => {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 8);
@@ -157,12 +168,20 @@ sidInput.addEventListener('input', (e) => {
     update();
 });
 
+/**
+ * MAIN UPDATE ENGINE
+ * Orchestrates iframe source generation and UI theme switching.
+ */
 function update() {
     const sid = sidInput.value;
-    const lang = langPicker.value;
+    const lang = langPicker.value; // Exact value from JSON (e.g., zh-CN)
+    
     if (sid.length < 9 || !lang) return;
 
-    const isApac = APAC_LIST.includes(lang);
+    // Normalization: Bridge the gap between 'zh-CN' and 'zh-cn'
+    const isApac = APAC_LIST.includes(lang.toLowerCase());
+    
+    // UI Mode Toggle
     if (isApac) {
         document.body.classList.add('apac-active');
         document.body.style.backgroundColor = "var(--apac-bg)";
@@ -174,48 +193,38 @@ function update() {
     placeholder.style.display = "none";
     frameHolder.style.display = "block";
 
+    /**
+     * URL GENERATION
+     * lang: Sets target engine locale
+     * show: Restricts internal menu options to disable manual selector
+     */
     const finalUrl = `https://attend.wordly.ai/frame/${sid}?lang=${lang}&show=${lang}&speakerLanguage=false&finalOnly=${isApac}`;
     
     urlDisplay.innerText = finalUrl;
     frame.src = finalUrl;
 
-    // FULL JS FUNCTION REVEAL
+    // Documentation Sync
     codeOutput.innerText = `/**
  * Wordly Dynamic Iframe Orchestrator
- * @param {string} sessionId - The formatted Wordly session (XXXX-0000)
- * @param {string} targetLang - The ISO language code
+ * @param {string} sessionId - Target session (XXXX-0000)
+ * @param {string} targetLang - Valid Wordly ISO code (e.g., "${lang}")
  */
 function updateWordlyExperience(sessionId, targetLang) {
     const frame = document.getElementById('wordly-frame');
-    const apacLangs = ['zh-CN', 'ja', 'ko'];
+    const apacTriggers = ['zh-cn', 'zh-tw', 'ja', 'ko'];
     
-    // Logic: Enable 'Complete Sentences' (finalOnly) for character-based languages
-    const isApac = apacLangs.includes(targetLang);
+    // Normalize comparison for robust logic
+    const isApac = apacTriggers.includes(targetLang.toLowerCase());
 
-    /** * Security & UX Parameters:
-     * lang: Force engine locale
-     * show: Lock internal menu to current selection
-     * speakerLanguage: Suppress speaker info toast
-     * finalOnly: Optimize APAC sentence structure
-     */
     const sourceUrl = "https://attend.wordly.ai/frame/" + sessionId + 
                       "?lang=" + targetLang + 
                       "&show=" + targetLang + 
                       "&speakerLanguage=false" + 
                       "&finalOnly=" + isApac;
 
-    // Direct DOM injection to trigger iframe refresh
     frame.src = sourceUrl;
-    
-    // Optional Visual Hook for UI Mode
-    if (isApac) {
-        document.body.classList.add('mode-apac');
-    } else {
-        document.body.classList.remove('mode-apac');
-    }
 }
 
-// Trigger call for current selection:
 updateWordlyExperience("${sid}", "${lang}");`;
 }
 
@@ -227,19 +236,23 @@ function toggleCode() {
 
 langPicker.addEventListener('change', update);
 
-// Local JSON fetch to bypass CORS
+/**
+ * ASSET SYNCHRONIZATION
+ * Fetches the manifest from a local copy to bypass CORS restrictions.
+ */
 fetch('languages.json')
     .then(r => r.json())
     .then(data => {
+        // Mirrored logic from Gateway Python script
         const list = data.languages || data; 
         if (list && Array.isArray(list)) {
             const formatted = list.map(item => ({
-                code: (item.wordlyCode || item.code || '').toLowerCase(),
+                code: item.wordlyCode || item.code || '',
                 name: item.englishName || item.name
             })).filter(i => i.code && i.name);
             initLangs(formatted);
         }
-    }).catch(e => console.warn("Local JSON fetch failed. Standing by with Backstop."));
+    }).catch(e => console.warn("Local JSON fetch failed. Standing by with Backstop list."));
 </script>
 </body>
 </html>
